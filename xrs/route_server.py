@@ -37,9 +37,6 @@ class route_server():
         self.ap_thread = Thread(target=self.sdx_ap.start)
         self.ap_thread.daemon = True
         self.ap_thread.start()
-
-        # Log File
-        self.log_file = log_file
         
     def start(self):
         print "Start Server"
