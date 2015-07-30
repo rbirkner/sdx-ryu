@@ -2,6 +2,8 @@
 #  Author:
 #  Rudiger Birkner (Networked Systems Group ETH Zurich)
 
+LOG = False
+
 def get_all_participants_advertising(prefix, participants):
     participant_set = set()
    
@@ -75,7 +77,10 @@ def bgp_update_peers(updates, xrs):
                         
                         # announce the route to each router of the participant
                         for neighbor in xrs.participant_2_portip[participant_name]:
-                            xrs.server.sender_queue.put(announce_route(neighbor, prefix, route["next_hop"], route["as_path"]))
+                            announcement = announce_route(neighbor, prefix, route["next_hop"], route["as_path"])
+                            if LOG:
+                                print announcement
+                            xrs.server.sender_queue.put(announcement)
         
         elif ('withdraw' in update):
             as_sets = {}
@@ -122,7 +127,10 @@ def bgp_update_peers(updates, xrs):
                     else:
                         xrs.participants[participant_name].delete_route("output", prefix)
                         for neighbor in xrs.participant_2_portip[participant_name]:
-                            xrs.server.sender_queue.put(withdraw_route(neighbor, prefix, xrs.prefix_2_VNH[prefix]))
+                            announcement = withdraw_route(neighbor, prefix, xrs.prefix_2_VNH[prefix])
+                            if LOG:
+                                print announcement
+                            xrs.server.sender_queue.put(announcement)
     return changes
                         
 def bgp_routes_are_equal(route1, route2):

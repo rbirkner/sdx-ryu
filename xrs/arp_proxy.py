@@ -54,7 +54,8 @@ class arp_proxy():
                     # check if the arp request stems from one of the participants
                     if eth_frame["src_mac"] in self.xrs.portmac_2_participant:
                         # then craft reply using VNH to VMAC mapping
-                        print "Crafting REPLY for received Request"
+                        if LOG:
+                            print "Crafting REPLY for received Request"
                         vmac_addr = vmac(arp_packet["dst_ip"], self.xrs.portmac_2_participant[eth_frame["src_mac"]], self.xrs)
 
                         # only send arp request if a vmac exists
@@ -68,7 +69,7 @@ class arp_proxy():
                             self.raw_socket.send(''.join(eth_packet))
                             
             except socket.timeout:
-                if LOG:
+                if False:
                     print 'Socket Timeout Occured'
 
     def stop(self):
