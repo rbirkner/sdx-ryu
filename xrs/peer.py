@@ -7,7 +7,7 @@ import json
 import sqlite3
 from rib import rib
 
-LOG = False
+LOG = True
 
 class peer():
     
@@ -58,20 +58,19 @@ class peer():
                             
                 origin = attribute['origin'] if 'origin' in attribute else ''
                             
-                temp_as_path = attribute['as-path'] if 'as-path' in attribute else ''
+                temp_as_path = attribute['as-path'] if 'as-path' in attribute else []
                 
-                if ('as-set' in attribute):
-                    for temp_as in attribute['as-set']:
-                        if (temp_as not in temp_as_path):
-                            temp_as_path.append(temp_as)
+                temp_as_set = attribute['as-set'] if 'as-set' in attribute else []
+
+                as_path = ' '.join(map(str,temp_as_path)).replace('[','').replace(']','').replace(',','')
+                if len(temp_as_set) > 0:
+                    as_path += ' ( '+' '.join(map(str,temp_as_set)).replace('[','').replace(']','').replace(',','')+' )'
 
                 if LOG:
                     print "AS PATH: " + str(attribute['as-path'] if 'as-path' in attribute else "empty")
                     print "AS SET: " + str(attribute['as-set'] if 'as-set' in attribute else "empty")
-                    print "COMBINATION: " + str(temp_as_path)
-
-                as_path = ' '.join(map(str,temp_as_path)).replace('[','').replace(']','').replace(',','')
-                            
+                    print "COMBINATION: " + str(as_path)
+                                            
                 med = attribute['med'] if 'med' in attribute else ''
                             
                 community = attribute['community'] if 'community' in attribute else ''

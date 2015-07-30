@@ -2,7 +2,7 @@
 #  Author:
 #  Rudiger Birkner (Networked Systems Group ETH Zurich)
 
-LOG = False
+LOG = True
 
 def get_all_participants_advertising(prefix, participants):
     participant_set = set()
@@ -48,16 +48,33 @@ def bgp_update_peers(updates, xrs):
             
             # send custom route advertisements based on peerings
             for participant_name in xrs.participants:
+                
+                as_path = []
                 as_set = set()
+                num_routes = 0
                 for peer in xrs.participants[participant_name].peers_out:
                     if peer in as_sets:
-                        as_set.update(set(as_sets[peer].split()))
+                        as_set.update(set(as_sets[peer].replace('(','').replace(')','').split()))
+                        num_routes += 1
+                        next_peer = peer
+
+                if num_routes == 1:
+                    path_set = as_sets[next_peer].split('(')
+                    as_path = path_set[0].split()
+                    as_set = set(path_set[1].replace(')','').split()) if len(path_set) > 1 else set()
                     
                 # only announce route if at least one of the peers advertises it to that participant
-                if as_set:
+                if as_set or as_path:
+
+                    as_path_attribute = ""
+                    if as_path:
+                        as_path_attribute += ' '.join(map(str,as_path))
+                    if as_set:
+                        as_path_attribute += ' ( ' + ' '.join(map(str,as_set)) + ' )'
+
                     route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
                              "origin": "",
-                             "as_path": ' '.join(map(str,as_set)),
+                             "as_path": as_path_attribute,
                              "communities": "",
                              "med": "",
                              "atomic_aggregate": ""}
@@ -97,16 +114,33 @@ def bgp_update_peers(updates, xrs):
                 # only modify route advertisement if this route has been advertised to the participant
                 prev_route = xrs.participants[participant_name].rib["output"][prefix]
                 if prev_route: 
+
+                    as_path = []
                     as_set = set()
+                    num_routes = 0
                     for peer in xrs.participants[participant_name].peers_out:
                         if peer in as_sets:
                             as_set.update(set(as_sets[peer].split()))
-                        
+                            num_routes += 1
+                            next_peer = peer
+
+                    if num_routes == 1:
+                        path_set = as_sets[next_peer].split('(')
+                        as_path = path_set[0].split()
+                        as_set = set(path_set[1].replace(')','').split()) if len(path_set) > 1 else set()
+
                     # withdraw if no one advertises that route, else update reachability
-                    if as_set:
+                    if as_set or as_path:
+
+                        as_path_attribute = ""
+                        if as_path:
+                            as_path_attribute += ' '.join(map(str,as_path))
+                        if as_set:
+                            as_path_attribute += ' ( ' + ' '.join(map(str,as_set)) + ' )'
+
                         route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
                                  "origin": "",
-                                 "as_path": ' '.join(map(str,as_set)),
+                                 "as_path": as_path_attribute,
                                  "communities": "",
                                  "med": "",
                                  "atomic_aggregate": ""}
@@ -123,7 +157,10 @@ def bgp_update_peers(updates, xrs):
                             
                             # announce the route to each router of the participant
                             for neighbor in xrs.participant_2_portip[participant_name]:
-                                xrs.server.sender_queue.put(announce_route(neighbor, prefix, route["next_hop"], route["as_path"]))
+                                announcement = announce_route(neighbor, prefix, route["next_hop"], route["as_path"])
+                                if LOG:
+                                    print announcement
+                                xrs.server.sender_queue.put(announcement)
                     else:
                         xrs.participants[participant_name].delete_route("output", prefix)
                         for neighbor in xrs.participant_2_portip[participant_name]:
@@ -147,7 +184,7 @@ def bgp_routes_are_equal(route1, route2):
 def announce_route(neighbor, prefix, next_hop, as_path):
            
     msg = "neighbor " + neighbor + " announce route " + prefix + " next-hop " + str(next_hop)
-    msg += " as-path [ ( " + as_path + " ) ]"
+    msg += " as-path [ " + as_path + " ]"
 
     return msg
 
