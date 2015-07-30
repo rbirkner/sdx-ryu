@@ -26,7 +26,7 @@ class arp_proxy():
         
         try:
             self.raw_socket = socket.socket( socket.AF_PACKET , socket.SOCK_RAW , socket.ntohs(ETH_TYPE_ARP))
-            self.raw_socket.bind(('exabgp-eth0', 0))
+            self.raw_socket.bind((self.xrs.interface, 0))
             self.raw_socket.settimeout(1.0)
         except socket.error as msg:
             print 'Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]

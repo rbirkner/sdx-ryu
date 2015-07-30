@@ -75,7 +75,8 @@ class aSDX(app_manager.RyuApp):
         # parse aSDX config
         CONF = cfg.CONF
         dir = CONF['asdx']['dir']
-        base_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","examples",dir,"controller"))
+        controller = CONF['asdx']['controller']
+        base_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","examples",dir,"controller-"+controller))
         config_file = os.path.join(base_path, "sdx_config", "sdx_global.cfg")
         policy_file = os.path.join(base_path, "sdx_config", "sdx_policies.cfg")
         
