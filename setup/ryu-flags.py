@@ -87,4 +87,6 @@ CONF.register_cli_opts([
     # aSDX
     cfg.StrOpt('dir', default='simple',
                help='directory where the example resides'),
+    cfg.StrOpt('controller', default='1',
+               help='number of controller instance'),
 ], group='asdx')
