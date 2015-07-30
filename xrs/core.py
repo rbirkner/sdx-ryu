@@ -31,6 +31,7 @@ class XRS():
         
         # put it in external config file
         self.connection_port = 6000
+        self.connection_key = 'xrs'
 
         self.superset_threshold = 10
         
@@ -64,6 +65,8 @@ def parse_config(config_file):
     if ("Route Server" in config):
         if ("Connection Port" in config["Route Server"]):
             xrs.connection_port = config["Route Server"]["Connection Port"]
+        if ("Connection Key" in config["Route Server"]):
+            xrs.connection_key = config["Route Server"]["Connection Key"]
         if ("Interface" in config["Route Server"]):
             xrs.interface = config["Route Server"]["Interface"]
 

@@ -29,7 +29,7 @@ class route_server():
         ## Parse Config
         self.xrs = parse_config(config_file)
         
-        self.xrs.server = Server(self.xrs.connection_port)
+        self.xrs.server = Server(self.xrs.connection_port, self.xrs.connection_key)
         self.run = True
         
         # Start arp proxy
