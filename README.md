@@ -53,20 +53,20 @@ Make OVS use OpenFlow 1.3
 
 Start __Ryu__ - The Controller  
 
-    $ ryu-manager ~/sdx-ryu/ctrl/asdx.py --asdx-dir simple
+    $ ryu-manager ~/sdx-ryu/ctrl/asdx.py --asdx-dir simple --asdx-controller 1
 
 Start the __Route Server__  
 
     $ cd ~/sdx-ryu/xrs
-    $ sudo ./route_server.py simple
+    $ sudo ./route_server.py simple 1
 
 Start __ExaBGP__  
 
-    $ exabgp ~/sdx-ryu/examples/simple/controller/sdx_config/bgp.conf
+    $ exabgp ~/sdx-ryu/examples/simple/controller-1/sdx_config/bgp.conf
 
 After using it, make sure to __remove__ old RIBs  
 
-    $ sudo rm ~/sdx-ryu/xrs/ribs/172.0.0.* 
+    $ sudo rm ~/sdx-ryu/xrs/ribs/* 
     
 ## Run the "simple" Example
 Check if the route server has correctly advertised the routes  
