@@ -170,11 +170,16 @@ def get_as_set(xrs, participant_name, peers, prefix):
     return as_path_attribute
 
 def get_policy_as_set(xrs, participant_name, prefix):
-    as_path_attribute = get_as_set(xrs, participant_name, xrs.participants[participant_name].fwd_peers, prefix)
+    peers = []
+    peers.extend(xrs.participants[participant_name].fwd_peers)
 
-    if not as_path_attribute:
-        as_path_attribute = get_best_path(xrs, participant_name, prefix)
+    route = xrs.participants[participant_name].get_route('local', prefix)
+    if route:
+        best_path_participant = xrs.portip_2_participant[route['next_hop']]
+        if (best_path_participant not in peers):
+            peers.append(best_path_participant)
 
+    as_path_attribute = get_as_set(xrs, participant_name, peers, prefix)
     return as_path_attribute
         
 def announce_route(neighbor, prefix, next_hop, as_path):
