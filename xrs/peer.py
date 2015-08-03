@@ -11,7 +11,7 @@ LOG = True
 
 class peer():
     
-    def __init__(self, asn, ports, peers_in, peers_out):
+    def __init__(self, asn, ports, peers_in, peers_out, fwd_peers):
         
         self.asn = asn
         self.ports = ports
@@ -28,6 +28,8 @@ class peer():
         self.peers_in = peers_in
         # peers that the participant can send its traffic to and gets advertisements from
         self.peers_out = peers_out
+        # peers that the participant is actually sending traffic to based on the policies
+        self.fwd_peers = fwd_peers
          
     def update(self,route):
         updates = []
@@ -64,7 +66,7 @@ class peer():
 
                 as_path = ' '.join(map(str,temp_as_path)).replace('[','').replace(']','').replace(',','')
                 if len(temp_as_set) > 0:
-                    as_path += ' ( '+' '.join(map(str,temp_as_set)).replace('[','').replace(']','').replace(',','')+' )'
+                    as_path += ' ( '+' '.join(map(str,sorted(list(temp_as_set), key=int))).replace('[','').replace(']','').replace(',','')+' )'
 
                 if LOG:
                     print "AS PATH: " + str(attribute['as-path'] if 'as-path' in attribute else "empty")

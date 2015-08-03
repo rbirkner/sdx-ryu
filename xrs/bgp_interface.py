@@ -39,46 +39,13 @@ def bgp_update_peers(updates, xrs):
         if ('announce' in update):
             as_sets = {}
             prefix = update['announce']['prefix']
-            
-            # get the as path from every participant that advertised this prefix
-            for participant_name in xrs.participants:
-                route = xrs.participants[participant_name].get_route('input', prefix)
-                if route:
-                    as_sets[participant_name] = route['as_path']
-            
+                    
             # send custom route advertisements based on peerings
             for participant_name in xrs.participants:
-                
-                as_path = []
-                as_set = set()
-                num_routes = 0
-                for peer in xrs.participants[participant_name].peers_out:
-                    if peer in as_sets:
-                        as_set.update(set(as_sets[peer].replace('(','').replace(')','').split()))
-                        num_routes += 1
-                        next_peer = peer
-
-                if num_routes == 1:
-                    path_set = as_sets[next_peer].split('(')
-                    as_path = path_set[0].split()
-                    as_set = set(path_set[1].replace(')','').split()) if len(path_set) > 1 else set()
-                    
+                route = bgp_make_route_advertisement(xrs, participant_name, prefix)
+        
                 # only announce route if at least one of the peers advertises it to that participant
-                if as_set or as_path:
-
-                    as_path_attribute = ""
-                    if as_path:
-                        as_path_attribute += ' '.join(map(str,as_path))
-                    if as_set:
-                        as_path_attribute += ' ( ' + ' '.join(map(str,as_set)) + ' )'
-
-                    route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
-                             "origin": "",
-                             "as_path": as_path_attribute,
-                             "communities": "",
-                             "med": "",
-                             "atomic_aggregate": ""}
-                             
+                if route:     
                     # check if we have already announced that route
                     prev_route = xrs.participants[participant_name].rib["output"][prefix]
                     
@@ -103,48 +70,14 @@ def bgp_update_peers(updates, xrs):
             as_sets = {}
             prefix = update['withdraw']['prefix']
             
-            # get the as path from every participant that advertised this prefix
-            for participant_name in xrs.participants:
-                route = xrs.participants[participant_name].get_route('input', prefix)
-                if route:
-                    as_sets[participant_name] = route['as_path']
-            
             # send custom route advertisements based on peerings
             for participant_name in xrs.participants:
                 # only modify route advertisement if this route has been advertised to the participant
                 prev_route = xrs.participants[participant_name].rib["output"][prefix]
                 if prev_route: 
-
-                    as_path = []
-                    as_set = set()
-                    num_routes = 0
-                    for peer in xrs.participants[participant_name].peers_out:
-                        if peer in as_sets:
-                            as_set.update(set(as_sets[peer].split()))
-                            num_routes += 1
-                            next_peer = peer
-
-                    if num_routes == 1:
-                        path_set = as_sets[next_peer].split('(')
-                        as_path = path_set[0].split()
-                        as_set = set(path_set[1].replace(')','').split()) if len(path_set) > 1 else set()
-
+                    route = bgp_make_route_advertisement(xrs, participant_name, prefix)
                     # withdraw if no one advertises that route, else update reachability
-                    if as_set or as_path:
-
-                        as_path_attribute = ""
-                        if as_path:
-                            as_path_attribute += ' '.join(map(str,as_path))
-                        if as_set:
-                            as_path_attribute += ' ( ' + ' '.join(map(str,as_set)) + ' )'
-
-                        route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
-                                 "origin": "",
-                                 "as_path": as_path_attribute,
-                                 "communities": "",
-                                 "med": "",
-                                 "atomic_aggregate": ""}
-                                 
+                    if route:
                         # check if we have already announced that route
                         if not bgp_routes_are_equal(route, prev_route):
                             # store announcement in output rib
@@ -180,6 +113,69 @@ def bgp_routes_are_equal(route1, route2):
     if (route1['as_path'] != route2['as_path']):
         return False
     return True
+
+def bgp_make_route_advertisement(xrs, participant_name, prefix):
+
+    if xrs.bgp_advertisements == "Best Path":
+        if LOG:
+            print "Best Path"
+        as_path_attribute = get_best_path(xrs, participant_name, prefix)
+    elif xrs.bgp_advertisements == "AS Set":
+        if LOG:
+            print "AS Set"
+        as_path_attribute = get_as_set(xrs, participant_name, xrs.participants[participant_name].peers_out, prefix)
+    elif xrs.bgp_advertisements == "Policy Based AS Path":
+        if LOG:
+            print "Policy Based AS Path"
+        as_path_attribute = get_policy_as_set(xrs, participant_name, prefix)
+
+    if as_path_attribute:
+        route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
+                 "origin": "",
+                 "as_path": as_path_attribute,
+                 "communities": "",
+                 "med": "",
+                 "atomic_aggregate": ""}
+        return route
+    return None
+
+def get_best_path(xrs, participant_name, prefix):
+    route = xrs.participants[participant_name].get_route('local', prefix)
+    return route['as_path'] if route else ""
+
+def get_as_set(xrs, participant_name, peers, prefix):
+    as_path = []
+    as_set = set()
+    as_path_attribute = ""
+    num_routes = 0
+
+    for peer in peers:
+        route = xrs.participants[peer].get_route('input', prefix)
+        if route:
+            as_set.update(set(route['as_path'].replace('(','').replace(')','').split()))
+            num_routes += 1
+            peer_as_path = route['as_path']
+
+    if num_routes == 1:
+        print str(peer_as_path)
+        path_set = peer_as_path.split('(')
+        as_path = path_set[0].split()
+        as_set = set(path_set[1].replace(')','').split()) if len(path_set) > 1 else set()
+
+    if as_path:
+        as_path_attribute += ' '.join(map(str,as_path))
+    if as_set:
+        as_path_attribute += ' ( ' + ' '.join(map(str,sorted(list(as_set), key=int))) + ' )'
+
+    return as_path_attribute
+
+def get_policy_as_set(xrs, participant_name, prefix):
+    as_path_attribute = get_as_set(xrs, participant_name, xrs.participants[participant_name].fwd_peers, prefix)
+
+    if not as_path_attribute:
+        as_path_attribute = get_best_path(xrs, participant_name, prefix)
+
+    return as_path_attribute
         
 def announce_route(neighbor, prefix, next_hop, as_path):
            
