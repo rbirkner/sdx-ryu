@@ -194,7 +194,7 @@ def get_blocking_policy_as_set(xrs, participant_name, prefix):
         route = xrs.participants[peer].get_route('input', prefix)
         if route:
             ases = route["as_path"].replace('(','').replace(')','').split()
-            if xrs.participant_2_asn[participant_name} in ases:
+            if xrs.participant_2_asn[participant_name] in ases:
                 peers.remove(peer)
                 if xrs.participants[participant_name].no_fwd_peers[route["prefix"]] is None:
                     xrs.participants[participant_name].no_fwd_peers[route["prefix"]] = []
