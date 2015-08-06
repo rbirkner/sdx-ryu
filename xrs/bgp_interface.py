@@ -128,6 +128,10 @@ def bgp_make_route_advertisement(xrs, participant_name, prefix):
         if LOG:
             print "Policy Based AS Path"
         as_path_attribute = get_policy_as_set(xrs, participant_name, prefix)
+    elif xrs.bgp_advertisements == "Blocking Policy Based AS Path":
+        if LOG:
+            print "Blocking Policy Based AS Path"
+        as_path_attribute = get_blocking_policy_as_set(xrs, participant_name, prefix)
 
     if as_path_attribute:
         route = {"next_hop": str(xrs.prefix_2_VNH[prefix]),
@@ -178,6 +182,27 @@ def get_policy_as_set(xrs, participant_name, prefix):
         best_path_participant = xrs.portip_2_participant[route['next_hop']]
         if (best_path_participant not in peers):
             peers.append(best_path_participant)
+
+    as_path_attribute = get_as_set(xrs, participant_name, peers, prefix)
+    return as_path_attribute
+
+def get_blocking_policy_as_set(xrs, participant_name, prefix):
+    peers = []
+    peers.extend(xrs.participants[participant_name].fwd_peers)
+
+    for peer in xrs.participants[participant_name].fwd_peers:
+        route = xrs.participants[peer].get_route('input', prefix)
+        if route:
+            ases = route["as_path"].replace('(','').replace(')','').split()
+            if xrs.participant_2_asn[participant_name} in ases:
+                peers.remove(peer)
+                if xrs.participants[participant_name].no_fwd_peers[route["prefix"]] is None:
+                    xrs.participants[participant_name].no_fwd_peers[route["prefix"]] = []
+                xrs.participants[participant_name].no_fwd_peers[route["prefix"]].append(peer)
+            else:
+                if peer in xrs.participants[participant_name].no_fwd_peers[route["prefix"]]:
+                    xrs.participants[participant_name].no_fwd_peers[route["prefix"]].remove(peer)
+                    
 
     as_path_attribute = get_as_set(xrs, participant_name, peers, prefix)
     return as_path_attribute

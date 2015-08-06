@@ -76,7 +76,7 @@ def parse_config(base_path, config_file):
             xrs.interface = config["Route Server"]["Interface"]
         if ("BGP Advertisements" in config["Route Server"]):
             xrs.bgp_advertisements = config["Route Server"]["BGP Advertisements"]
-            if (xrs.bgp_advertisements == "Policy Based AS Path"):
+            if (xrs.bgp_advertisements == "Policy Based AS Path" or xrs.bgp_advertisements == "Blocking Policy Based AS Path"):
                 if ("Policy File" in config):
                     xrs.policy_file = config["Policy File"]
                 policies = json.load(open(os.path.join(base_path, "sdx_config", xrs.policy_file), 'r'))

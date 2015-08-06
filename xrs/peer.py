@@ -30,6 +30,8 @@ class peer():
         self.peers_out = peers_out
         # peers that the participant is actually sending traffic to based on the policies
         self.fwd_peers = fwd_peers
+        # peers that the participant is not allowed to send any traffic to to avoid loops
+        self.no_fwd_peers = {}
          
     def update(self,route):
         updates = []
