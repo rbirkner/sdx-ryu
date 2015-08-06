@@ -190,6 +190,8 @@ def get_blocking_policy_as_set(xrs, participant_name, prefix):
     peers = []
     peers.extend(xrs.participants[participant_name].fwd_peers)
 
+    print "PEERS: "+str(peers)
+
     route = xrs.participants[participant_name].get_route('local', prefix)
     if route:
         best_path_participant = xrs.portip_2_participant[route['next_hop']]
@@ -208,8 +210,9 @@ def get_blocking_policy_as_set(xrs, participant_name, prefix):
                     xrs.participants[participant_name].no_fwd_peers[route["prefix"]] = []
                 xrs.participants[participant_name].no_fwd_peers[route["prefix"]].append(peer)
             else:
-                if peer in xrs.participants[participant_name].no_fwd_peers[route["prefix"]]:
-                    xrs.participants[participant_name].no_fwd_peers[route["prefix"]].remove(peer)
+                if route["prefix"] in xrs.participants[participant_name].no_fwd_peers:
+                    if peer in xrs.participants[participant_name].no_fwd_peers[route["prefix"]]:
+                        xrs.participants[participant_name].no_fwd_peers[route["prefix"]].remove(peer)
                     
     print "PEERS AFTER: "+str(peers)
 

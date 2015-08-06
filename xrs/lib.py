@@ -60,9 +60,12 @@ def vmac(vnh, participant, xrs):
                     else: 
                         set_bitstring += "0"
                 if (xrs.bgp_advertisements == "Blocking Policy Based AS Path"):
-                    if (temp_participant in xrs.participants[participant].fwd_peers and temp_participant not in xrs.participants[participant].no_fwd_peers[prefix]):
-                        set_bitstring += "1"
-                    else: 
+                    if (prefix in xrs.participants[participant].no_fwd_peers):
+                        if (temp_participant in xrs.participants[participant].fwd_peers and temp_participant not in xrs.participants[participant].no_fwd_peers[prefix]):
+                            set_bitstring += "1"
+                        else: 
+                            set_bitstring += "0"
+                    else:
                         set_bitstring += "0"
                 else:
                     set_bitstring += "1"

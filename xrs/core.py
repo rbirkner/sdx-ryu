@@ -138,7 +138,7 @@ def parse_config(base_path, config_file):
             peers_in = participant["Peers"]
             
             fwd_peers = []
-            if xrs.bgp_advertisements == "Policy Based AS Path":
+            if xrs.bgp_advertisements == "Policy Based AS Path" or xrs.bgp_advertisements == "Blocking Policy Based AS Path":
                 file_path = os.path.join(base_path, "participant_policies", policies[participant_name])
                 participant_policies = json.load(open(file_path, 'r'))
         
